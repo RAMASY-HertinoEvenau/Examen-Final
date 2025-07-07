@@ -91,28 +91,32 @@ class ReseauNeurones:
 
     def entrainer(self, X, y, taux_apprentissage=0.01, epochs=1000):
         for _ in range(epochs):
-            # Propagation avant
             self.propagation_avant(X)
-            
-            # Calcul de la perte (cross-entropy)
             y_one_hot = np.zeros((len(y), 9))
             y_one_hot[np.arange(len(y)), y] = 1
             erreur_sortie = self.sortie - y_one_hot
-            
-            # Rétropropagation
             grad_sortie = erreur_sortie
             grad_poids_cachee_sortie = np.dot(self.cachee.T, grad_sortie)
             grad_biais_sortie = np.sum(grad_sortie, axis=0, keepdims=True)
-            
             grad_cachee = np.dot(grad_sortie, self.poids_cachee_sortie.T) * self.cachee * (1 - self.cachee)
             grad_poids_entree_cachee = np.dot(X.T, grad_cachee)
             grad_biais_cache = np.sum(grad_cachee, axis=0, keepdims=True)
-            
-            # Mise à jour des poids
             self.poids_entree_cachee -= taux_apprentissage * grad_poids_entree_cachee
             self.biais_cache -= taux_apprentissage * grad_biais_cache
             self.poids_cachee_sortie -= taux_apprentissage * grad_poids_cachee_sortie
             self.biais_sortie -= taux_apprentissage * grad_biais_sortie
+
+    def predire(self, X):
+        return np.argmax(self.propagation_avant(X), axis=1)
+
+def jouer_tour_IA(modele, plateau):
+    mouvements_disponibles = [i for i in range(9) if plateau[i] == 0]
+    if mouvements_disponibles:
+        etat_plateau = plateau.reshape(1, -1)
+        mouvement = modele.predire(etat_plateau)[0]
+        if mouvement in mouvements_disponibles:
+            plateau[mouvement] = 1
+    return plateau
 
 if __name__ == "__main__":
     print("Génération du jeu de données...")
@@ -120,4 +124,7 @@ if __name__ == "__main__":
     print("Entraînement du modèle...")
     modele = ReseauNeurones()
     modele.entrainer(etats_plateau, mouvements_optimaux, taux_apprentissage=0.01, epochs=1000)
-    print("Entraînement terminé.")
+    print("Test de prédiction...")
+    plateau = initialiser_plateau()
+    plateau = jouer_tour_IA(modele, plateau)
+    print(f"Plateau après un tour de l'IA : {plateau}")
