@@ -70,7 +70,29 @@ def generer_jeu_donnees(nb_parties):
                 plateau[random.choice(mouvements_disponibles)] = -1
     return np.array(etats_plateau), np.array(mouvements_optimaux)
 
+class ReseauNeurones:
+    def __init__(self, taille_entree=9, taille_cachee=32, taille_sortie=9):
+        self.poids_entree_cachee = np.random.randn(taille_entree, taille_cachee) * 0.1
+        self.biais_cache = np.zeros((1, taille_cachee))
+        self.poids_cachee_sortie = np.random.randn(taille_cachee, taille_sortie) * 0.1
+        self.biais_sortie = np.zeros((1, taille_sortie))
+
+    def sigmoide(self, x):
+        return 1 / (1 + np.exp(-np.clip(x, -500, 500)))
+
+    def softmax(self, x):
+        exp_x = np.exp(x - np.max(x, axis=1, keepdims=True))
+        return exp_x / np.sum(exp_x, axis=1, keepdims=True)
+
+    def propagation_avant(self, X):
+        self.cachee = self.sigmoide(np.dot(X, self.poids_entree_cachee) + self.biais_cache)
+        self.sortie = self.softmax(np.dot(self.cachee, self.poids_cachee_sortie) + self.biais_sortie)
+        return self.sortie
+
 if __name__ == "__main__":
     print("Génération du jeu de données...")
     etats_plateau, mouvements_optimaux = generer_jeu_donnees(1000)
-    print(f"Dataset généré : {len(etats_plateau)} états de plateau")
+    print("Initialisation du réseau de neurones...")
+    modele = ReseauNeurones()
+    sorties = modele.propagation_avant(etats_plateau[:5])
+    print(f"Sorties pour 5 premiers états : \n{sorties}")
