@@ -109,14 +109,57 @@ class ReseauNeurones:
     def predire(self, X):
         return np.argmax(self.propagation_avant(X), axis=1)
 
-def jouer_tour_IA(modele, plateau):
-    mouvements_disponibles = [i for i in range(9) if plateau[i] == 0]
-    if mouvements_disponibles:
-        etat_plateau = plateau.reshape(1, -1)
-        mouvement = modele.predire(etat_plateau)[0]
-        if mouvement in mouvements_disponibles:
-            plateau[mouvement] = 1
-    return plateau
+def afficher_plateau(plateau):
+    symboles = {0: ' ', 1: 'X', -1: 'O'}
+    for i in range(0, 9, 3):
+        print(f"{symboles[plateau[i]]} | {symboles[plateau[i+1]]} | {symboles[plateau[i+2]]}")
+        if i < 6:
+            print("-" * 9)
+
+def jouer_partie(modele):
+    plateau = initialiser_plateau()
+    print("Bienvenue au Tic-Tac-Toe ! Vous êtes O, l'IA est X.")
+    print("Entrez un numéro de 0 à 8 pour jouer.")
+    afficher_plateau(np.array([i for i in range(9)]))
+    
+    while True:
+        # Tour de l'IA (X)
+        mouvements_disponibles = [i for i in range(9) if plateau[i] == 0]
+        if mouvements_disponibles:
+            etat_plateau = plateau.reshape(1, -1)
+            mouvement = modele.predire(etat_plateau)[0]
+            if mouvement in mouvements_disponibles:
+                plateau[mouvement] = 1
+                print("\nTour de l'IA :")
+                afficher_plateau(plateau)
+                if verifier_gagnant(plateau, 1):
+                    print("L'IA (X) gagne !")
+                    break
+                if 0 not in plateau:
+                    print("Match nul !")
+                    break
+        
+        # Tour du joueur (O)
+        while True:
+            try:
+                mouvement = int(input("Votre tour (0-8) : "))
+                if mouvement in mouvements_disponibles:
+                    plateau[mouvement] = -1
+                    print("\nVotre tour :")
+                    afficher_plateau(plateau)
+                    if verifier_gagnant(plateau, -1):
+                        print("Vous (O) gagnez !")
+                        break
+                    if 0 not in plateau:
+                        print("Match nul !")
+                        break
+                    break
+                else:
+                    print("Mouvement invalide. Essayez encore.")
+            except ValueError:
+                print("Entrez un numéro valide (0-8).")
+        if verifier_gagnant(plateau, -1):
+            break
 
 if __name__ == "__main__":
     print("Génération du jeu de données...")
@@ -124,7 +167,6 @@ if __name__ == "__main__":
     print("Entraînement du modèle...")
     modele = ReseauNeurones()
     modele.entrainer(etats_plateau, mouvements_optimaux, taux_apprentissage=0.01, epochs=1000)
-    print("Test de prédiction...")
-    plateau = initialiser_plateau()
-    plateau = jouer_tour_IA(modele, plateau)
-    print(f"Plateau après un tour de l'IA : {plateau}")
+    print("Modèle entraîné. Prêt à jouer !")
+    jouer_partie(modele)
+    
